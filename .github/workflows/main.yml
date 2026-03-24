@@ -1,7 +1,9 @@
 name: Build and Deploy to Itch.io
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
-  # Manual trigger with UI inputs
   workflow_dispatch:
     inputs:
       itchUsername:
@@ -33,13 +35,11 @@ on:
         default: false
         type: boolean
 
-# Prevents overlapping builds
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Filter platforms based on user selection
   setup:
     name: Configure Build Matrix
     runs-on: ubuntu-latest
@@ -70,7 +70,6 @@ jobs:
           
           echo "matrix={\"include\":[$PLATFORMS]}" >> "$GITHUB_OUTPUT"
 
-  # Job 2: Build selected platforms
   build:
     name: Build ${{ matrix.targetPlatform }}
     needs: setup
@@ -78,7 +77,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -94,7 +92,6 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
             Library-
       
-      # Important: Frees up ~10GB of disk space to avoid "No space left" errors
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -117,7 +114,6 @@ jobs:
           path: build/${{ matrix.targetPlatform }}
           retention-days: 90
 
-  # Job 3: Push to itch.io
   deploy:
     name: Deploy ${{ matrix.targetPlatform }} to Itch
     needs: [setup, build]
@@ -125,7 +121,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
