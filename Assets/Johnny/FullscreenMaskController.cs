@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -9,7 +10,7 @@ public class FullscreenMaskController : MonoBehaviour
     [SerializeField] private ScriptableRendererData rendererData;
     [SerializeField] private string featureName = "Fullscreen Mask";
     [SerializeField] private Material maskMaterialAsset;
-    [SerializeField] private Camera mainCamera; // Drag your Main Camera here
+    [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform originTransform;
 
     [Header("Transition Settings")]
@@ -23,19 +24,25 @@ public class FullscreenMaskController : MonoBehaviour
     public float jitterFrequency = 2f;
     public float jitterAmplitude = 0.5f;
     
-    [Header("Current Live Data")]
-    public Vector2 currentNoiseSpeed;
-    public Vector2 originScreenPoint;
-    
     [Header("Edge Polish")]
     [Range(0f, 0.5f)] public float edgeDistortion = 0.05f;
     [Range(0f, 0.5f)] public float edgeSoftness = 0.1f;
     [Range(0f, 0.1f)] public float edgeWidth = 0.02f;
     [ColorUsage(true, true)] public Color edgeColor = new Color(2f, 0.5f, 0f, 1f);
 
+    [Header("Other Settings")]
+    [Tooltip("Value is applied in UV space")]
+    [SerializeField] Vector2 originOffset = new Vector2(0f, 0f);
+    
+    [ShowNonSerializedField] private Vector2 currentNoiseSpeed;
+    [ShowNonSerializedField] private  Vector2 originScreenPoint;
+    
     public float CurrentMaskAmount { get; private set; }
 
-    private int shaderMaskId, noiseTilingId, noiseSpeedId, edgeDistId, edgeSoftId, edgeWidthId, edgeColorId, originId;
+    private int maskAmountId, 
+        noiseTilingId, noiseSpeedId, 
+        edgeDistId, edgeSoftId, edgeWidthId, edgeColorId, 
+        originId, aspectRatioId;
     
     // The actual reference to the feature in your Project Asset
     private ScriptableRendererFeature maskFeature;
@@ -88,7 +95,7 @@ public class FullscreenMaskController : MonoBehaviour
 
     private void CacheIDs()
     {
-        shaderMaskId = Shader.PropertyToID("_MaskAmount");
+        maskAmountId = Shader.PropertyToID("_MaskAmount");
         noiseTilingId = Shader.PropertyToID("_NoiseTiling");
         noiseSpeedId = Shader.PropertyToID("_NoiseSpeed");
         edgeDistId = Shader.PropertyToID("_EdgeDistortion");
@@ -96,6 +103,7 @@ public class FullscreenMaskController : MonoBehaviour
         edgeWidthId = Shader.PropertyToID("_EdgeWidth");
         edgeColorId = Shader.PropertyToID("_EdgeColor");
         originId = Shader.PropertyToID("_Origin");
+        aspectRatioId = Shader.PropertyToID("_AspectRatio");
     }
 
     private void OnBeginCamera(ScriptableRenderContext context, Camera cam)
@@ -142,23 +150,22 @@ public class FullscreenMaskController : MonoBehaviour
 
     private void UpdateOrigin()
     {
-        originScreenPoint = (originTransform != null && mainCamera != null)
+        originScreenPoint = (originTransform && mainCamera)
             ? mainCamera.WorldToViewportPoint(originTransform.position)
             : new Vector2(0.5f, 0.5f);
     }
     
     private void UpdateShaderProperties()
     {
-        if (runtimeMaterialInstance != null)
-        {
-            runtimeMaterialInstance.SetFloat(shaderMaskId, CurrentMaskAmount);
-            runtimeMaterialInstance.SetVector(noiseTilingId, noiseTiling);
-            runtimeMaterialInstance.SetVector(noiseSpeedId, currentNoiseSpeed);
-            runtimeMaterialInstance.SetFloat(edgeDistId, edgeDistortion);
-            runtimeMaterialInstance.SetFloat(edgeSoftId, edgeSoftness);
-            runtimeMaterialInstance.SetFloat(edgeWidthId, edgeWidth);
-            runtimeMaterialInstance.SetColor(edgeColorId, edgeColor);
-            runtimeMaterialInstance.SetVector(originId, originScreenPoint);
-        }
+        if (!runtimeMaterialInstance || !mainCamera) return;
+        runtimeMaterialInstance.SetFloat(maskAmountId, CurrentMaskAmount);
+        runtimeMaterialInstance.SetVector(noiseTilingId, noiseTiling);
+        runtimeMaterialInstance.SetVector(noiseSpeedId, currentNoiseSpeed);
+        runtimeMaterialInstance.SetFloat(edgeDistId, edgeDistortion);
+        runtimeMaterialInstance.SetFloat(edgeSoftId, edgeSoftness);
+        runtimeMaterialInstance.SetFloat(edgeWidthId, edgeWidth);
+        runtimeMaterialInstance.SetColor(edgeColorId, edgeColor);
+        runtimeMaterialInstance.SetVector(originId, originScreenPoint + originOffset);
+        runtimeMaterialInstance.SetFloat(aspectRatioId, mainCamera.aspect);
     }
 }
