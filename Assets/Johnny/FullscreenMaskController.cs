@@ -42,7 +42,6 @@ public class FullscreenMaskController : MonoBehaviour
     private Material runtimeMaterialInstance;
     private Material originalFeatureMaterial;
     private float randomOffsetX, randomOffsetY;
-    // private bool wasFullyClosed = true;
 
     private void OnEnable()
     {
@@ -61,7 +60,11 @@ public class FullscreenMaskController : MonoBehaviour
             if (maskFeature is FullScreenPassRendererFeature fsf)
                 fsf.passMaterial = originalFeatureMaterial;
         }
-        if (runtimeMaterialInstance != null) Destroy(runtimeMaterialInstance);
+        
+        if (runtimeMaterialInstance != null)
+        {
+            Destroy(runtimeMaterialInstance);
+        }
     }
 
     private void Awake()
@@ -74,15 +77,13 @@ public class FullscreenMaskController : MonoBehaviour
             runtimeMaterialInstance = new Material(maskMaterialAsset);
 
         // Find the feature once and store it
-        if (rendererData != null)
-        {
-            maskFeature = rendererData.rendererFeatures.Find(f => f.name == featureName);
-            if (maskFeature is FullScreenPassRendererFeature fsf && runtimeMaterialInstance != null)
-            {
-                originalFeatureMaterial = fsf.passMaterial; 
-                fsf.passMaterial = runtimeMaterialInstance; 
-            }
-        }
+        if (rendererData == null) return;
+        maskFeature = rendererData.rendererFeatures.Find(f => f.name == featureName);
+        
+        if (maskFeature is not FullScreenPassRendererFeature fsf) return;
+        originalFeatureMaterial = fsf.passMaterial; 
+        if (runtimeMaterialInstance != null)
+            fsf.passMaterial = runtimeMaterialInstance;
     }
 
     private void CacheIDs()
@@ -97,11 +98,13 @@ public class FullscreenMaskController : MonoBehaviour
         originId = Shader.PropertyToID("_Origin");
     }
 
-    // THE MAGIC LOGIC:
     private void OnBeginCamera(ScriptableRenderContext context, Camera cam)
     {
         if (maskFeature == null) return;
 
+        // This fixes an issue where the edge color is bleeding into the alternate camera texture
+        // by disabling the shader while we are rendering the alternate camera
+        
         // If the camera is the Main Camera AND we have the mask open, turn it ON.
         // If the camera is the Alternate Camera (or Scene View), turn it OFF.
         if (cam == mainCamera && CurrentMaskAmount > 0)
@@ -120,18 +123,9 @@ public class FullscreenMaskController : MonoBehaviour
         UpdateOrigin();
         UpdateShaderProperties();
 
-        if (CurrentMaskAmount != targetMaskAmount)
+        if (!Mathf.Approximately(CurrentMaskAmount, targetMaskAmount))
         {
             CurrentMaskAmount = Mathf.MoveTowards(CurrentMaskAmount, targetMaskAmount, transitionSpeed * Time.deltaTime);
-            
-            // if (CurrentMaskAmount <= 0 && targetMaskAmount <= 0)
-            // {
-            //     wasFullyClosed = true;
-            // }
-            // else
-            // {
-            //     wasFullyClosed = false;
-            // }
         }
     }
 
@@ -148,18 +142,11 @@ public class FullscreenMaskController : MonoBehaviour
 
     private void UpdateOrigin()
     {
-        if (originTransform != null && mainCamera != null)
-        {
-            // Convert 3D world position to 0-1 Screen Space (Viewport)
-            originScreenPoint = mainCamera.WorldToViewportPoint(originTransform.position);
-        }
-        else
-        {
-            // Default to center if no transform is assigned
-            originScreenPoint = new Vector2(0.5f, 0.5f);
-        }
-
+        originScreenPoint = (originTransform != null && mainCamera != null)
+            ? mainCamera.WorldToViewportPoint(originTransform.position)
+            : new Vector2(0.5f, 0.5f);
     }
+    
     private void UpdateShaderProperties()
     {
         if (runtimeMaterialInstance != null)
