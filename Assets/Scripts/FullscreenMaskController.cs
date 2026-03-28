@@ -13,32 +13,32 @@ public class FullscreenMaskController : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform originTransform;
 
-    [Header("Transition Settings")]
-    [SerializeField] private float transitionSpeed = 5f;
-    [Range(0f, 1f)] public float targetMaskAmount = 0f;
+    [Header("Mask Settings")]
+    [Range(0f, 1f)] 
+    [SerializeField] private float maskAmount = 0f;
+    [Tooltip("Value is applied in UV space")]
+    [SerializeField] private Vector2 originOffset = new Vector2(0f, 0f);
 
     [Header("Noise & Jitter")]
-    public Vector2 noiseTiling = new Vector2(10f, 10f);
-    public Vector2 baseNoiseFlow = new Vector2(0.2f, 0.5f);
-    public bool enableJitter = true;
-    public float jitterFrequency = 2f;
-    public float jitterAmplitude = 0.5f;
+    [SerializeField] private Vector2 noiseTiling = new Vector2(10f, 10f);
+    [SerializeField] private Vector2 baseNoiseFlow = new Vector2(0.2f, 0.5f);
+    [SerializeField] private bool enableJitter = true;
+    [SerializeField] private float jitterFrequency = 2f;
+    [SerializeField] private float jitterAmplitude = 0.5f;
     
     [Header("Edge Polish")]
-    [Range(0f, 0.5f)] public float edgeDistortion = 0.05f;
-    [Range(0f, 0.5f)] public float edgeSoftness = 0.1f;
-    [Range(0f, 0.1f)] public float edgeWidth = 0.02f;
-    [ColorUsage(true, true)] public Color edgeColor = new Color(2f, 0.5f, 0f, 1f);
-
-    [Header("Other Settings")]
-    [Tooltip("Value is applied in UV space")]
-    [SerializeField] Vector2 originOffset = new Vector2(0f, 0f);
+    [Range(0f, 0.5f)] 
+    [SerializeField] private float edgeDistortion = 0.05f;
+    [Range(0f, 0.5f)] 
+    [SerializeField] private float edgeSoftness = 0.1f;
+    [Range(0f, 0.1f)] 
+    [SerializeField] private float edgeWidth = 0.02f;
+    [ColorUsage(true, true)] 
+    [SerializeField] private Color edgeColor = new Color(2f, 0.5f, 0f, 1f);
     
     [ShowNonSerializedField] private Vector2 currentNoiseSpeed;
     [ShowNonSerializedField] private  Vector2 originScreenPoint;
     
-    public float CurrentMaskAmount { get; private set; }
-
     private int maskAmountId, 
         noiseTilingId, noiseSpeedId, 
         edgeDistId, edgeSoftId, edgeWidthId, edgeColorId, 
@@ -115,7 +115,7 @@ public class FullscreenMaskController : MonoBehaviour
         
         // If the camera is the Main Camera AND we have the mask open, turn it ON.
         // If the camera is the Alternate Camera (or Scene View), turn it OFF.
-        if (cam == mainCamera && CurrentMaskAmount > 0)
+        if (cam == mainCamera && maskAmount > 0)
         {
             maskFeature.SetActive(true);
         }
@@ -130,11 +130,6 @@ public class FullscreenMaskController : MonoBehaviour
         HandleJitter();
         UpdateOrigin();
         UpdateShaderProperties();
-
-        if (!Mathf.Approximately(CurrentMaskAmount, targetMaskAmount))
-        {
-            CurrentMaskAmount = Mathf.MoveTowards(CurrentMaskAmount, targetMaskAmount, transitionSpeed * Time.deltaTime);
-        }
     }
 
     private void HandleJitter()
@@ -158,7 +153,7 @@ public class FullscreenMaskController : MonoBehaviour
     private void UpdateShaderProperties()
     {
         if (!runtimeMaterialInstance || !mainCamera) return;
-        runtimeMaterialInstance.SetFloat(maskAmountId, CurrentMaskAmount);
+        runtimeMaterialInstance.SetFloat(maskAmountId, maskAmount);
         runtimeMaterialInstance.SetVector(noiseTilingId, noiseTiling);
         runtimeMaterialInstance.SetVector(noiseSpeedId, currentNoiseSpeed);
         runtimeMaterialInstance.SetFloat(edgeDistId, edgeDistortion);
@@ -167,5 +162,10 @@ public class FullscreenMaskController : MonoBehaviour
         runtimeMaterialInstance.SetColor(edgeColorId, edgeColor);
         runtimeMaterialInstance.SetVector(originId, originScreenPoint + originOffset);
         runtimeMaterialInstance.SetFloat(aspectRatioId, mainCamera.aspect);
+    }
+    
+    public void SetMaskAmount(float amount)
+    {
+        maskAmount = amount;
     }
 }

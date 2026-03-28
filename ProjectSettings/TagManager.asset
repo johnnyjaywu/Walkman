@@ -13,7 +13,7 @@ TagManager:
   - UI
   - Alternate
   - Ground
-  - 
+  - CameraBounds
   - 
   - 
   - 
@@ -40,6 +40,9 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Player
+    uniqueID: 2028556441
     locked: 0
   m_RenderingLayers:
   - Default

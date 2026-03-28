@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
         jumpAction.action.Enable();
 
         jumpAction.action.performed += HandleJumpInput;
+        jumpAction.action.canceled += HandleJumpCanceled;
     }
 
     private void OnDisable()
@@ -26,17 +27,18 @@ public class PlayerController : MonoBehaviour
         jumpAction.action.Disable();
 
         jumpAction.action.performed -= HandleJumpInput;
+        jumpAction.action.canceled -= HandleJumpCanceled;
     }
 
     private void Update()
     {
         ReadMovementInput();
+        ReadDropIntent();
         HandleStateTransitions();
     }
 
     private void FixedUpdate()
     {
-        // Physics-affecting logic must remain in FixedUpdate for deterministic execution
         movementLogic.ApplyMovement(horizontalInput);
     }
 
@@ -45,12 +47,21 @@ public class PlayerController : MonoBehaviour
         horizontalInput = moveAction.action.ReadValue<Vector2>().x;
     }
 
+    private void ReadDropIntent()
+    {
+        bool isDownHeld = moveAction.action.ReadValue<Vector2>().y < -0.5f;
+        
+        // IsPressed() evaluates the continuous held state rather than the single frame trigger
+        bool isJumpHeld = jumpAction.action.IsPressed(); 
+
+        movementLogic.SetDropIntent(isDownHeld && isJumpHeld);
+    }
+
     private void HandleStateTransitions()
     {
         animationController.SetMoveSpeed(horizontalInput);
         animationController.SetIsAirborne(movementLogic.IsAirborne);
 
-        // Consume flags to ensure triggers fire exactly once per state change
         if (movementLogic.HasJustJumped)
         {
             animationController.TriggerJump();
@@ -66,6 +77,17 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJumpInput(InputAction.CallbackContext context)
     {
-        movementLogic.ExecuteJump();
+        float verticalInput = moveAction.action.ReadValue<Vector2>().y;
+
+        // If holding down, suppress the jump buffer. The drop intent polling will handle the mechanics.
+        if (verticalInput >= -0.5f)
+        {
+            movementLogic.BufferJumpInput();
+        }
+    }
+
+    private void HandleJumpCanceled(InputAction.CallbackContext context)
+    {
+        movementLogic.CancelJump();
     }
 }
