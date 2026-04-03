@@ -18,16 +18,14 @@ public class PlayerAnimationController : MonoBehaviour
 
     [AnimatorParam("animator")]
     [SerializeField] private string landTriggerParam;
-
-    private void Reset()
-    {
-        animator = GetComponent<Animator>();
-    }
+    
+    [AnimatorParam("animator")]
+    [SerializeField] private string isLandingFrozenParam;
 
     public void SetMoveSpeed(float speed)
     {
         if (!animator || string.IsNullOrEmpty(moveSpeedParam)) return;
-        animator.SetFloat(moveSpeedParam, speed);
+        animator.SetFloat(moveSpeedParam, Mathf.Abs(speed));
     }
 
     public void TriggerJump()
@@ -46,5 +44,11 @@ public class PlayerAnimationController : MonoBehaviour
     {
         if (!animator || string.IsNullOrEmpty(landTriggerParam)) return;
         animator.SetTrigger(landTriggerParam);
+    }
+    
+    public void SetIsLandingFrozen(bool isLandingFrozen)
+    {
+        if (!animator || string.IsNullOrEmpty(isLandingFrozenParam)) return;
+        animator.SetBool(isLandingFrozenParam, isLandingFrozen);
     }
 }
