@@ -41,7 +41,9 @@ public class BatteryHUD : MonoBehaviour
             batteryText.SetText($"{Mathf.RoundToInt(batteryController.CurrentBatteryLevel)}%");
         if (chargeImages is { Count: > 0 })
         {
-            int index = (int)Mathf.Min(percent * chargeImages.Count, chargeImages.Count - 1);
+            int index = percent >= 0.85f ? chargeImages.Count - 1 : Mathf.CeilToInt(Mathf.Min(percent * (chargeImages.Count - 1), chargeImages.Count - 2));
+            // int index = Mathf.CeilToInt(Mathf.Min(percent * chargeImages.Count, chargeImages.Count - 1));
+            // Debug.Log($"Percent: {percent} at index: {index}");
             batteryImage.sprite = chargeImages[index];
         }
     }

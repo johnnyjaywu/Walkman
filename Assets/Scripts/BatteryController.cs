@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class BatteryController : MonoBehaviour
 {
-    [SerializeField] private FullscreenMaskController fullscreenMaskController;
+    private FullscreenMaskController fullscreenMaskController;
 
     [OnValueChanged(nameof(UpdateBatteryLevel))]
     [Range(0, 100)]
-    [SerializeField] private float currentBatteryLevel = 0;
+    [SerializeField] private float currentBatteryLevel = 100;
 
     [Tooltip("Rate of which battery level depletes per second")]
     [SerializeField] private float depletionRate = 1f;
@@ -20,6 +20,11 @@ public class BatteryController : MonoBehaviour
     public event Action OnBatteryLevelChanged;
 
     private float targetBatteryLevel;
+
+    private void Awake()
+    {
+        fullscreenMaskController = FindAnyObjectByType<FullscreenMaskController>();
+    }
 
     private void OnEnable()
     {

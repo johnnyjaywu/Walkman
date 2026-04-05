@@ -18,6 +18,7 @@ public class FullscreenMaskController : MonoBehaviour
     [SerializeField] private float maskAmount = 0f;
     [Tooltip("Value is applied in UV space")]
     [SerializeField] private Vector2 originOffset = new Vector2(0f, 0f);
+    [SerializeField] private float maskSize;
 
     [Header("Noise & Jitter")]
     [SerializeField] private Vector2 noiseTiling = new Vector2(10f, 10f);
@@ -36,8 +37,12 @@ public class FullscreenMaskController : MonoBehaviour
     [ColorUsage(true, true)] 
     [SerializeField] private Color edgeColor = new Color(2f, 0.5f, 0f, 1f);
     
+    [Header("Lighting Control")]
+    [Tooltip("The 2D light you want to hide from a specific camera.")]
+    [SerializeField] private Light2D lightToHide;
+    
     [ShowNonSerializedField] private Vector2 currentNoiseSpeed;
-    [ShowNonSerializedField] private  Vector2 originScreenPoint;
+    [ShowNonSerializedField] private  Vector3 originScreenPoint;
     
     private int maskAmountId, 
         noiseTilingId, noiseSpeedId, 
@@ -123,6 +128,19 @@ public class FullscreenMaskController : MonoBehaviour
         {
             maskFeature.SetActive(false);
         }
+        
+        if (lightToHide != null)
+        {
+            // If the camera currently drawing is the Main Camera, turn the light OFF.
+            if (cam == mainCamera) 
+            {
+                lightToHide.enabled = false;
+            }
+            else
+            {
+                lightToHide.enabled = true; 
+            }
+        }
     }
 
     private void Update()
@@ -147,20 +165,35 @@ public class FullscreenMaskController : MonoBehaviour
     {
         originScreenPoint = (originTransform && mainCamera)
             ? mainCamera.WorldToViewportPoint(originTransform.position)
-            : new Vector2(0.5f, 0.5f);
+            : new Vector3(0.5f, 0.5f, 0);
     }
     
     private void UpdateShaderProperties()
     {
         if (!runtimeMaterialInstance || !mainCamera) return;
-        runtimeMaterialInstance.SetFloat(maskAmountId, maskAmount);
+        
+        // start with base mask amount (0 to 1)
+        float finalMaskAmount = maskAmount;
+        // If the object is in front of the camera
+        if (originScreenPoint.z > 0) 
+        {
+            // --- THE PERSPECTIVE MATH ---
+            // screenPoint.z is the literal distance from the camera in 3D units.
+            // We use the camera's FOV to calculate exactly how much the screen shrinks with distance.
+            float fovScale = 1f / Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            
+            // Calculate the apparent size of the circle on the screen
+            finalMaskAmount = (maskAmount * maskSize * fovScale) / originScreenPoint.z;
+        }
+        
+        runtimeMaterialInstance.SetFloat(maskAmountId, finalMaskAmount);
         runtimeMaterialInstance.SetVector(noiseTilingId, noiseTiling);
         runtimeMaterialInstance.SetVector(noiseSpeedId, currentNoiseSpeed);
         runtimeMaterialInstance.SetFloat(edgeDistId, edgeDistortion);
         runtimeMaterialInstance.SetFloat(edgeSoftId, edgeSoftness);
         runtimeMaterialInstance.SetFloat(edgeWidthId, edgeWidth);
         runtimeMaterialInstance.SetColor(edgeColorId, edgeColor);
-        runtimeMaterialInstance.SetVector(originId, originScreenPoint + originOffset);
+        runtimeMaterialInstance.SetVector(originId, new Vector2(originScreenPoint.x, originScreenPoint.y) + originOffset);
         runtimeMaterialInstance.SetFloat(aspectRatioId, mainCamera.aspect);
     }
     
