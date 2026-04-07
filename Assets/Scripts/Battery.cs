@@ -7,18 +7,18 @@ public class Battery : MonoBehaviour
     [Range(0, 100)]
     [SerializeField] private int chargeAmount = 15;
 
-    private BatteryController batteryController;
+    private Headphones headphones;
 
     private void Awake()
     {
-        batteryController = FindAnyObjectByType<BatteryController>();
+        headphones = FindAnyObjectByType<Headphones>();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        if (!batteryController) return;
-        batteryController.AddBattery(chargeAmount);
+        if (!headphones) return;
+        headphones.Charge(chargeAmount);
         Destroy(gameObject);
     }
 }

@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5436542309939591549}
+  - component: {fileID: 5858294464681934045}
   m_Layer: 0
   m_Name: Headphones
   m_TagString: Untagged
@@ -31,6 +32,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6961267567685400103}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5858294464681934045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5969347492016110780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7e1efd7b43a43c79b01eb583a5abcd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Headphones
+  currentBatteryLevel: 1
+  depletionRate: 2
+  chargeRate: 25
 --- !u!1 &6168296627668176380
 GameObject:
   m_ObjectHideFlags: 0
@@ -44,9 +60,7 @@ GameObject:
   - component: {fileID: 8561922857036622666}
   - component: {fileID: 5009839085511222908}
   - component: {fileID: 544043825365975610}
-  - component: {fileID: 1081429728425484253}
   - component: {fileID: 3361310498305672793}
-  - component: {fileID: 2973300498658931138}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -79,13 +93,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6168296627668176380}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 880b70ba66fb0c243ac9de434ff25a28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   movementLogic: {fileID: 5009839085511222908}
-  animationController: {fileID: 1081429728425484253}
+  animationController: {fileID: 4785572291816463903}
   landingImpulse: {fileID: 3361310498305672793}
   moveAction: {fileID: -1680190386980627800, guid: 2fed827931957764a9faffaf7eaa825c, type: 3}
   jumpAction: {fileID: -2099379676528639254, guid: 2fed827931957764a9faffaf7eaa825c, type: 3}
@@ -128,7 +142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ffdbe45ed33822419e4f1736484e52b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 5
+  moveSpeed: 4
   jumpForce: 15
   jumpCutMultiplier: 0.5
   minGroundNormalY: 0.7
@@ -174,24 +188,6 @@ CapsuleCollider2D:
   m_Offset: {x: 0, y: 0.5}
   m_Size: {x: 0.5, y: 1}
   m_Direction: 0
---- !u!114 &1081429728425484253
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6168296627668176380}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 313a048f05e9fba4697cfcc12f21a622, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
-  animator: {fileID: 3837901074381921989}
-  moveSpeedParam: MoveSpeed
-  jumpTriggerParam: JumpTrigger
-  isAirborneParam: IsAirborne
-  landTriggerParam: LandTrigger
-  isLandingFrozenParam: IsLandingFrozen
 --- !u!114 &3361310498305672793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,21 +241,6 @@ MonoBehaviour:
     DissipationDistance: 100
     PropagationSpeed: 343
   DefaultVelocity: {x: 0, y: -0.1, z: 0}
---- !u!114 &2973300498658931138
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6168296627668176380}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7e1efd7b43a43c79b01eb583a5abcd5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BatteryController
-  currentBatteryLevel: 0
-  depletionRate: 1
-  chargeRate: 25
 --- !u!1 &6663587053402857739
 GameObject:
   m_ObjectHideFlags: 0
@@ -347,11 +328,69 @@ PrefabInstance:
       propertyPath: m_FlipX
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7788803315401611828, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+      propertyPath: m_Size.x
+      value: 0.53125
+      objectReference: {fileID: 0}
+    - target: {fileID: 7788803315401611828, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+      propertyPath: m_Size.y
+      value: 0.96875
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4427632500829839473, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2404368316690890625}
+    - targetCorrespondingSourceObject: {fileID: 4427632500829839473, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4785572291816463903}
   m_SourcePrefab: {fileID: 100100000, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+--- !u!1 &1226254292079687220 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4427632500829839473, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}
+  m_PrefabInstance: {fileID: 3203919180929357381}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2404368316690890625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1226254292079687220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcbfaef36c0a38d42aa0face21aacb24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimationEventDispatcher
+--- !u!114 &4785572291816463903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1226254292079687220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 313a048f05e9fba4697cfcc12f21a622, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
+  animator: {fileID: 3837901074381921989}
+  eventDispatcher: {fileID: 2404368316690890625}
+  trackedAnimatorStates:
+  - HeadphonesOn
+  - HeadphonesOff
+  - Listening
+  moveSpeedParam: 526065662
+  jumpTriggerParam: 113680519
+  isAirborneParam: -459509701
+  landTriggerParam: 21645378
+  isLandingFrozenParam: 440048837
+  putOnHeadphonesParam: 1005704716
+  takeOffHeadphonesParam: -553556437
+  isFirstTimeParam: -1390315259
+  hasHeadphonesParam: 675755523
 --- !u!4 &3012841256634407093 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 412458337143033584, guid: 437408e5f4a06a445a65187469bb9d7a, type: 3}

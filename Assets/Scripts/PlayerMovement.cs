@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -45,7 +46,8 @@ public class PlayerMovement : MonoBehaviour
     private float jumpCooldownTimer;
     private float impactTimer;
     private float recoveryTimer;
-
+    private float spawnGraceTimer = 0.2f;
+    
     public bool IsGrounded { get; private set; }
     public bool IsAirborne { get; private set; }
     public bool HasJustJumped { get; private set; }
@@ -116,6 +118,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void UpdateTimers()
     {
+        if (spawnGraceTimer > 0f)
+        {
+            spawnGraceTimer -= Time.fixedDeltaTime;
+        }
+        
         // Run the timers sequentially. 
         if (impactTimer > 0f)
         {
@@ -217,18 +224,23 @@ public class PlayerMovement : MonoBehaviour
                 break;
             }
         }
-
+        
+        if (spawnGraceTimer > 0f)
+        {
+            foundGround = true; 
+        }
+        
         IsGrounded = foundGround;
         IsAirborne = !IsGrounded;
 
-        if (IsGrounded && !wasGrounded && rb.linearVelocity.y <= 0.1f)
+        if (spawnGraceTimer <= 0f && IsGrounded && !wasGrounded && rb.linearVelocity.y <= 0.1f)
         {
             HasJustLanded = true;
             
             // Start the sequence by triggering the impact hold
             impactTimer = landingImpactDuration;
         }
-
+        
         wasGrounded = IsGrounded;
 
         if (IsGrounded)
