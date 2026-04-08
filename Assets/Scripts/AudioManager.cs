@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NaughtyAttributes;
+using PrimeTween;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Events;
@@ -9,12 +10,18 @@ public class AudioManager : MonoBehaviour
 {
     [SerializeField] private List<AudioSource> music;
     [SerializeField] private List<AudioSource> ambience;
+
+    [Header("Snapshots")]
     [SerializeField] private AudioMixerSnapshot realitySnapshot;
+
     [SerializeField] private AudioMixerSnapshot alternateSnapshot;
     [SerializeField] private float fadeInTime = 1f;
     [SerializeField] private float fadeOutTime = 1f;
-    
+
     private bool isMusicPlaying;
+
+    public event Action OnMusicStarted;
+    public event Action OnMusicStopped;
 
     private void Start()
     {
@@ -35,6 +42,7 @@ public class AudioManager : MonoBehaviour
     public void TransitionToReality()
     {
         realitySnapshot.TransitionTo(fadeOutTime);
+        OnMusicStopped?.Invoke();
     }
 
     [Button]
@@ -42,5 +50,6 @@ public class AudioManager : MonoBehaviour
     {
         if (!isMusicPlaying) PlayMusic();
         alternateSnapshot.TransitionTo(fadeInTime);
+        OnMusicStarted?.Invoke();
     }
 }

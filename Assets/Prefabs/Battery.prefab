@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2130607667607767140}
   - component: {fileID: 2357510373253088907}
   - component: {fileID: 851346435766211139}
+  - component: {fileID: 9134419952055262241}
   m_Layer: 6
   m_Name: Battery
   m_TagString: Untagged
@@ -83,7 +84,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5964fed26384dba933163ec0e08da2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Battery
-  chargeAmount: 15
+  chargeAmount: 100
+  animationDuration: 0.3
+  animateScaleValue: 1.2
 --- !u!212 &851346435766211139
 SpriteRenderer:
   serializedVersion: 2
@@ -143,3 +146,21 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &9134419952055262241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7338534698218870593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc8c6e1179260f145bf00dbaddcb8ae2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimateWithMusic
+  animatePosition: 0
+  positionYDuration: 0
+  positionYOffset: 0
+  animateScale: 1
+  scaleDuration: 0.58
+  targetScale: 1.2

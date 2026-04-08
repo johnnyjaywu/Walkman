@@ -9,8 +9,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpForce = 15f;
     [SerializeField] private float jumpCutMultiplier = 0.5f;
 
+    [Header("Ground Checks")]
     [Tooltip("Minimum Y value of a collision normal to be considered ground. 0.7 is roughly a 45-degree slope.")]
     [SerializeField] private float minGroundNormalY = 0.7f;
+
+    [Tooltip("How far below the feet to check for ground. Creates a magnetic stick for descending slopes/platforms.")]
+    [SerializeField] private float groundCheckTolerance = 0.05f;
 
     [Header("Forgiveness Mechanics")]
     [SerializeField] private float coyoteTime = 0.1f;
@@ -21,7 +25,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Impact Mechanics")]
     [Tooltip("The exact duration in seconds the character is forced to hold the squashed impact pose.")]
     [SerializeField] private float landingImpactDuration = 0.15f;
-    
+
     [Tooltip("The time it takes to get up AFTER the impact hold has finished.")]
     [SerializeField] private float gettingUpBufferTime = 0.25f;
 
@@ -35,9 +39,12 @@ public class PlayerMovement : MonoBehaviour
     private readonly HashSet<Collider2D> ignoredPlatforms = new HashSet<Collider2D>();
     private readonly List<Collider2D> platformsToRemove = new List<Collider2D>();
 
-    private readonly ContactPoint2D[] contactBuffer = new ContactPoint2D[kMaxContacts];
+    private readonly RaycastHit2D[] groundHits = new RaycastHit2D[kMaxContacts];
     private readonly Collider2D[] dropBuffer = new Collider2D[kMaxContacts];
 
+    // Platform Tethering State
+    private Transform currentPlatform;
+    private Vector3 previousPlatformPosition;
     private bool wasGrounded;
     private bool isDropIntentActive;
 
@@ -47,7 +54,7 @@ public class PlayerMovement : MonoBehaviour
     private float impactTimer;
     private float recoveryTimer;
     private float spawnGraceTimer = 0.2f;
-    
+
     public bool IsGrounded { get; private set; }
     public bool IsAirborne { get; private set; }
     public bool HasJustJumped { get; private set; }
@@ -56,10 +63,16 @@ public class PlayerMovement : MonoBehaviour
 
     // The player cannot move if EITHER timer is active
     public bool IsMovementFrozen => impactTimer > 0f || recoveryTimer > 0f;
-    
+
     // The animator only holds the impact pose while this specific timer is active
     public bool IsHoldingImpact => impactTimer > 0f;
 
+    public void SetGravity(float gravity)
+    {
+        rb.gravityScale = gravity;
+        rb.linearVelocity = Vector2.zero;
+    }
+    
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -70,6 +83,7 @@ public class PlayerMovement : MonoBehaviour
     {
         UpdateTimers();
         CheckGroundedState();
+        StickToMovingPlatform();
         ProcessDropIntent();
         ManageIgnoredPlatforms();
         HandleJumpLogic();
@@ -122,12 +136,12 @@ public class PlayerMovement : MonoBehaviour
         {
             spawnGraceTimer -= Time.fixedDeltaTime;
         }
-        
+
         // Run the timers sequentially. 
         if (impactTimer > 0f)
         {
             impactTimer -= Time.fixedDeltaTime;
-            
+
             // The exact frame the impact hold finishes, start the recovery block
             if (impactTimer <= 0f)
             {
@@ -210,37 +224,48 @@ public class PlayerMovement : MonoBehaviour
 
     private void CheckGroundedState()
     {
-        int contactCount = capsuleCollider.GetContacts(contactBuffer);
+        int hitCount = Physics2D.CapsuleCast(
+            capsuleCollider.bounds.center,
+            capsuleCollider.size,
+            capsuleCollider.direction,
+            0f,
+            Vector2.down,
+            ContactFilter2D.noFilter,
+            groundHits,
+            groundCheckTolerance);
 
         bool foundGround = false;
         currentGroundCollider = null;
 
-        for (int i = 0; i < contactCount; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            if (contactBuffer[i].normal.y >= minGroundNormalY)
+            Collider2D col = groundHits[i].collider;
+
+            // Ignore ourselves and any trigger volumes
+            if (col == capsuleCollider || col.isTrigger) continue;
+
+            if (groundHits[i].normal.y >= minGroundNormalY)
             {
                 foundGround = true;
-                currentGroundCollider = contactBuffer[i].collider;
+                currentGroundCollider = col;
                 break;
             }
         }
-        
+
         if (spawnGraceTimer > 0f)
         {
-            foundGround = true; 
+            foundGround = true;
         }
-        
+
         IsGrounded = foundGround;
         IsAirborne = !IsGrounded;
 
         if (spawnGraceTimer <= 0f && IsGrounded && !wasGrounded && rb.linearVelocity.y <= 0.1f)
         {
             HasJustLanded = true;
-            
-            // Start the sequence by triggering the impact hold
             impactTimer = landingImpactDuration;
         }
-        
+
         wasGrounded = IsGrounded;
 
         if (IsGrounded)
@@ -250,6 +275,33 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             coyoteTimer -= Time.fixedDeltaTime;
+        }
+
+        // PLATFORM TRACKING
+        // If we are standing on a platform, cache its transform to read its movement next frame.
+        if (IsGrounded && currentGroundCollider != null && currentGroundCollider.GetComponent<PlatformEffector2D>())
+        {
+            if (currentPlatform != currentGroundCollider.transform)
+            {
+                currentPlatform = currentGroundCollider.transform;
+                previousPlatformPosition = currentPlatform.position;
+            }
+        }
+        else
+        {
+            currentPlatform = null;
+        }
+    }
+
+    private void StickToMovingPlatform()
+    {
+        // If we are locked onto a platform, calculate exactly how far it moved this frame
+        // and physically inject that delta into the player's position.
+        if (currentPlatform != null)
+        {
+            Vector3 platformDelta = currentPlatform.position - previousPlatformPosition;
+            rb.position += (Vector2)platformDelta;
+            previousPlatformPosition = currentPlatform.position;
         }
     }
 

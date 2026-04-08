@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -11,6 +12,9 @@ public class GameManager : MonoBehaviour
     private PlayerController player;
     private AudioManager audioManager;
     private BatteryHUD batteryHUD;
+    private Oldman oldman;
+    private CameraZoomController cameraZoomController;
+    private FullscreenMaskController maskController;
 
     private void Awake()
     {
@@ -20,6 +24,9 @@ public class GameManager : MonoBehaviour
         audioManager = FindAnyObjectByType<AudioManager>();
         batteryHUD = FindAnyObjectByType<BatteryHUD>();
         batteryHUD.gameObject.SetActive(false);
+        oldman = FindAnyObjectByType<Oldman>();
+        cameraZoomController = FindAnyObjectByType<CameraZoomController>();
+        maskController = FindAnyObjectByType<FullscreenMaskController>();
     }
 
     private void OnEnable()
@@ -38,23 +45,29 @@ public class GameManager : MonoBehaviour
 
     public void StartGameplay()
     {
-        if (player)
-        {
-            player.SetInputEnabled(false);
-            player.PutOnHeadphones();
-        }
+        StartCoroutine(FirstTimeSequence());
+    }
+
+    public void StartEnding()
+    {
+        cameraZoomController.ZoomOut();
+        // maskController.MaskSize = 20f;
+        headphones.DepletionRate = 0;
+        headphones.Charge(100);
+        player.SetGravityEnabled(false);
+        player.SetInputEnabled(false);
     }
 
     private void OnHeadphonesBatteryDepleted()
     {
-        if (player) player.TakeOffHeadphones();
+        player.TakeOffHeadphones();
     }
-    
+
     private void OnPlayerHeadphonesOn()
     {
-        if (audioManager) audioManager.TransitionToAlternate();
-        if (batteryHUD) batteryHUD.gameObject.SetActive(true);
-        if (player && player.IsFirstTime && headphones)
+        audioManager.TransitionToAlternate();
+        batteryHUD.gameObject.SetActive(true);
+        if (player.IsFirstTime)
         {
             headphones.enabled = true;
             headphones.Charge(100);
@@ -63,8 +76,19 @@ public class GameManager : MonoBehaviour
 
     private void OnPlayerHeadphonesOff()
     {
-        if (audioManager) audioManager.TransitionToReality();
-        if (batteryHUD) batteryHUD.gameObject.SetActive(false);
+        audioManager.TransitionToReality();
+        batteryHUD.gameObject.SetActive(false);
         headphones.enabled = false;
+        player.ResetGameplay();
+        oldman.ResetGameplay();
+    }
+
+    private IEnumerator FirstTimeSequence()
+    {
+        player.SetInputEnabled(false);
+        oldman.GiveWalkman();
+        yield return new WaitForSeconds(2f);
+        player.PutOnHeadphones();
+        oldman.Idle();
     }
 }

@@ -18,10 +18,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference jumpAction;
 
     private float horizontalInput;
+    private bool canJump;
 
     public bool IsFirstTime { get; private set; } = true;
     public event Action OnHeadphonesOn;
     public event Action OnHeadphonesOff;
+
+    public void SetGravityEnabled(bool enable)
+    {
+        float gravity = enable ? 1 : 0;
+        movementLogic.SetGravity(gravity);
+    }
 
     public void SetInputEnabled(bool enable)
     {
@@ -39,19 +46,14 @@ public class PlayerController : MonoBehaviour
 
     public void SetJumpEnabled(bool enable)
     {
-        if (enable)
-        {
-            jumpAction.action.Enable();
-        }
-        else
-        {
-            jumpAction.action.Disable();
-        }
+        canJump = enable;
     }
 
     public void PutOnHeadphones() => animationController.TriggerPutOnHeadphones(IsFirstTime);
 
     public void TakeOffHeadphones() => animationController.TriggerTakeOffHeadphones();
+
+    public void ResetGameplay() => IsFirstTime = true;
 
     private void OnEnable()
     {
@@ -105,7 +107,6 @@ public class PlayerController : MonoBehaviour
         {
             case "HeadphonesOn":
                 OnHeadphonesOn?.Invoke();
-                SetJumpEnabled(true);
                 break;
             case "HeadphonesOff":
                 OnHeadphonesOff?.Invoke();
@@ -120,12 +121,13 @@ public class PlayerController : MonoBehaviour
         {
             case "Listening":
                 SetInputEnabled(true);
-                break;
-            case "HeadphonesOn":
+                SetJumpEnabled(true);
                 IsFirstTime = false;
                 break;
+            case "HeadphonesOn":
+                if (!IsFirstTime) SetJumpEnabled(true);
+                break;
             case "HeadphonesOff":
-                Debug.Log("End Game here!");
                 break;
         }
     }
@@ -149,8 +151,6 @@ public class PlayerController : MonoBehaviour
 
         if (movementLogic.HasJustLanded)
         {
-            animationController.TriggerLand();
-
             if (landingImpulse != null)
             {
                 landingImpulse.GenerateImpulse();
@@ -162,6 +162,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJumpInput(InputAction.CallbackContext context)
     {
+        if (!canJump) return;
         float verticalInput = moveAction.action.ReadValue<Vector2>().y;
 
         if (verticalInput >= -0.5f)

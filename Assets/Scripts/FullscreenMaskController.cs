@@ -8,52 +8,66 @@ public class FullscreenMaskController : MonoBehaviour
 {
     [Header("Pipeline Control")]
     [SerializeField] private ScriptableRendererData rendererData;
+
     [SerializeField] private string featureName = "Fullscreen Mask";
     [SerializeField] private Material maskMaterialAsset;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform originTransform;
 
     [Header("Mask Settings")]
-    [Range(0f, 1f)] 
+    [Range(0f, 1f)]
     [SerializeField] private float maskAmount = 0f;
+
     [Tooltip("Value is applied in UV space")]
     [SerializeField] private Vector2 originOffset = new Vector2(0f, 0f);
-    [SerializeField] private float maskSize;
 
     [Header("Noise & Jitter")]
     [SerializeField] private Vector2 noiseTiling = new Vector2(10f, 10f);
+
     [SerializeField] private Vector2 baseNoiseFlow = new Vector2(0.2f, 0.5f);
     [SerializeField] private bool enableJitter = true;
     [SerializeField] private float jitterFrequency = 2f;
     [SerializeField] private float jitterAmplitude = 0.5f;
-    
+
     [Header("Edge Polish")]
-    [Range(0f, 0.5f)] 
+    [Range(0f, 0.5f)]
     [SerializeField] private float edgeDistortion = 0.05f;
-    [Range(0f, 0.5f)] 
+
+    [Range(0f, 0.5f)]
     [SerializeField] private float edgeSoftness = 0.1f;
-    [Range(0f, 0.1f)] 
+
+    [Range(0f, 0.1f)]
     [SerializeField] private float edgeWidth = 0.02f;
-    [ColorUsage(true, true)] 
+
+    [ColorUsage(true, true)]
     [SerializeField] private Color edgeColor = new Color(2f, 0.5f, 0f, 1f);
-    
+
     [Header("Lighting Control")]
     [Tooltip("The 2D light you want to hide from a specific camera.")]
     [SerializeField] private Light2D lightToHide;
-    
+
     [ShowNonSerializedField] private Vector2 currentNoiseSpeed;
-    [ShowNonSerializedField] private  Vector3 originScreenPoint;
-    
-    private int maskAmountId, 
-        noiseTilingId, noiseSpeedId, 
-        edgeDistId, edgeSoftId, edgeWidthId, edgeColorId, 
-        originId, aspectRatioId;
-    
+    [ShowNonSerializedField] private Vector3 originScreenPoint;
+
+    private int maskAmountId,
+        noiseTilingId,
+        noiseSpeedId,
+        edgeDistId,
+        edgeSoftId,
+        edgeWidthId,
+        edgeColorId,
+        originId,
+        aspectRatioId;
+
     // The actual reference to the feature in your Project Asset
     private ScriptableRendererFeature maskFeature;
     private Material runtimeMaterialInstance;
     private Material originalFeatureMaterial;
     private float randomOffsetX, randomOffsetY;
+
+    public float MaskAmount => maskAmount;
+
+    public float CurrentViewportRadius { get; private set; }
 
     private void OnEnable()
     {
@@ -72,7 +86,7 @@ public class FullscreenMaskController : MonoBehaviour
             if (maskFeature is FullScreenPassRendererFeature fsf)
                 fsf.passMaterial = originalFeatureMaterial;
         }
-        
+
         if (runtimeMaterialInstance != null)
         {
             Destroy(runtimeMaterialInstance);
@@ -91,9 +105,9 @@ public class FullscreenMaskController : MonoBehaviour
         // Find the feature once and store it
         if (rendererData == null) return;
         maskFeature = rendererData.rendererFeatures.Find(f => f.name == featureName);
-        
+
         if (maskFeature is not FullScreenPassRendererFeature fsf) return;
-        originalFeatureMaterial = fsf.passMaterial; 
+        originalFeatureMaterial = fsf.passMaterial;
         if (runtimeMaterialInstance != null)
             fsf.passMaterial = runtimeMaterialInstance;
     }
@@ -117,7 +131,7 @@ public class FullscreenMaskController : MonoBehaviour
 
         // This fixes an issue where the edge color is bleeding into the alternate camera texture
         // by disabling the shader while we are rendering the alternate camera
-        
+
         // If the camera is the Main Camera AND we have the mask open, turn it ON.
         // If the camera is the Alternate Camera (or Scene View), turn it OFF.
         if (cam == mainCamera && maskAmount > 0)
@@ -128,17 +142,17 @@ public class FullscreenMaskController : MonoBehaviour
         {
             maskFeature.SetActive(false);
         }
-        
+
         if (lightToHide != null)
         {
             // If the camera currently drawing is the Main Camera, turn the light OFF.
-            if (cam == mainCamera) 
+            if (cam == mainCamera)
             {
                 lightToHide.enabled = false;
             }
             else
             {
-                lightToHide.enabled = true; 
+                lightToHide.enabled = true;
             }
         }
     }
@@ -167,25 +181,38 @@ public class FullscreenMaskController : MonoBehaviour
             ? mainCamera.WorldToViewportPoint(originTransform.position)
             : new Vector3(0.5f, 0.5f, 0);
     }
-    
+
     private void UpdateShaderProperties()
     {
         if (!runtimeMaterialInstance || !mainCamera) return;
-        
+
         // start with base mask amount (0 to 1)
         float finalMaskAmount = maskAmount;
         // If the object is in front of the camera
-        if (originScreenPoint.z > 0) 
+        if (originScreenPoint.z > 0)
         {
-            // --- THE PERSPECTIVE MATH ---
-            // screenPoint.z is the literal distance from the camera in 3D units.
-            // We use the camera's FOV to calculate exactly how much the screen shrinks with distance.
-            float fovScale = 1f / Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
-            
-            // Calculate the apparent size of the circle on the screen
-            finalMaskAmount = (maskAmount * maskSize * fovScale) / originScreenPoint.z;
+            // 1. Calculate Frustum dimensions at this depth
+            float frustumHeight = 2.0f * originScreenPoint.z * Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float frustumWidth = frustumHeight * mainCamera.aspect;
+
+            // --- THE OFF-CENTER FIX ---
+            // 2. Find the longest physical distance from the anchor to the left/right and top/bottom edges
+            float maxDistX = Mathf.Max(originScreenPoint.x, 1f - originScreenPoint.x) * frustumWidth;
+            float maxDistY = Mathf.Max(originScreenPoint.y, 1f - originScreenPoint.y) * frustumHeight;
+
+            // 3. Use Pythagorean theorem to find the distance to the farthest corner
+            float maxWorldRadius = Mathf.Sqrt((maxDistX * maxDistX) + (maxDistY * maxDistY));
+
+            // 4. Scale by our slider
+            float dynamicWorldRadius = maxWorldRadius * maskAmount * 1.2f;
+
+            // 5. Convert back to Viewport Space for the Shader
+            float fovScale = 1f / (2f * Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad));
+            CurrentViewportRadius = (dynamicWorldRadius * fovScale) / originScreenPoint.z;
+
+            finalMaskAmount = CurrentViewportRadius;
         }
-        
+
         runtimeMaterialInstance.SetFloat(maskAmountId, finalMaskAmount);
         runtimeMaterialInstance.SetVector(noiseTilingId, noiseTiling);
         runtimeMaterialInstance.SetVector(noiseSpeedId, currentNoiseSpeed);
@@ -193,10 +220,11 @@ public class FullscreenMaskController : MonoBehaviour
         runtimeMaterialInstance.SetFloat(edgeSoftId, edgeSoftness);
         runtimeMaterialInstance.SetFloat(edgeWidthId, edgeWidth);
         runtimeMaterialInstance.SetColor(edgeColorId, edgeColor);
-        runtimeMaterialInstance.SetVector(originId, new Vector2(originScreenPoint.x, originScreenPoint.y) + originOffset);
+        runtimeMaterialInstance.SetVector(originId,
+            new Vector2(originScreenPoint.x, originScreenPoint.y) + originOffset);
         runtimeMaterialInstance.SetFloat(aspectRatioId, mainCamera.aspect);
     }
-    
+
     public void SetMaskAmount(float amount)
     {
         maskAmount = amount;

@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1472680531898337140, guid: 8765ee9afae308a43a15a0d68d193f74, type: 3}
+      propertyPath: positionYDuration
+      value: 0.29
+      objectReference: {fileID: 0}
     - target: {fileID: 1786472558775933153, guid: 8765ee9afae308a43a15a0d68d193f74, type: 3}
       propertyPath: m_Name
       value: Platform_Yellow
@@ -16,6 +20,14 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 1908297613469205132, guid: 5dcef47170512de4cbf1e3920e8a602d, type: 3}
+    - target: {fileID: 8431377806862149616, guid: 8765ee9afae308a43a15a0d68d193f74, type: 3}
+      propertyPath: animationSpeed
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8431377806862149616, guid: 8765ee9afae308a43a15a0d68d193f74, type: 3}
+      propertyPath: animationDuration
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 8519876566551036382, guid: 8765ee9afae308a43a15a0d68d193f74, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

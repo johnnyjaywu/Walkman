@@ -28,9 +28,6 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private int isAirborneParam;
 
     [AnimatorParam("animator")]
-    [SerializeField] private int landTriggerParam;
-
-    [AnimatorParam("animator")]
     [SerializeField] private int isLandingFrozenParam;
 
     [AnimatorParam("animator")]
@@ -171,12 +168,6 @@ public class PlayerAnimationController : MonoBehaviour
         animator.SetBool(isAirborneParam, isAirborne);
     }
 
-    public void TriggerLand()
-    {
-        if (animator == null) return;
-        animator.SetTrigger(landTriggerParam);
-    }
-
     public void SetIsLandingFrozen(bool isLandingFrozen)
     {
         if (animator == null) return;
@@ -194,7 +185,6 @@ public class PlayerAnimationController : MonoBehaviour
     public void TriggerTakeOffHeadphones()
     {
         if (animator == null) return;
-        Debug.Log("Trigger take off headphones");
         animator.SetTrigger(takeOffHeadphonesParam);
         animator.SetBool(hasHeadphonesParam, false);
     }

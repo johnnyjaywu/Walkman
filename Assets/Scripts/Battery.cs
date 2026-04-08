@@ -1,4 +1,4 @@
-using System;
+using PrimeTween;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
@@ -6,7 +6,7 @@ public class Battery : MonoBehaviour
 {
     [Range(0, 100)]
     [SerializeField] private int chargeAmount = 15;
-
+    
     private Headphones headphones;
 
     private void Awake()
